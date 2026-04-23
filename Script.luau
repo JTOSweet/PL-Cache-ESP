@@ -56,7 +56,7 @@ local function addESP(instance)
     billboard.StudsOffset = Vector3.new(0, 2, 0)
     billboard.AlwaysOnTop = true
     billboard.MaxDistance = math.huge
-    billboard.Enabled = true -- Initially true, filter handles visibility in loop
+    billboard.Enabled = true
 
     local textLabel = Instance.new("TextLabel")
     textLabel.Parent = billboard
@@ -79,7 +79,7 @@ local function addESP(instance)
     activeESPs[instance] = {
         billboard = billboard, 
         textLabel = textLabel,
-        lastColor = nil -- Used to check if we need to update rarity
+        lastColor = nil
     }
 end 
 
@@ -100,16 +100,16 @@ local function clearAllESP()
 end 
 
 local Window = Rayfield:CreateWindow({
-    Name = "Parkour Legacy Cache ESP Hub",
-    LoadingTitle = "Loading...",
-    LoadingSubtitle = "Cache ESP",
+    Name = "PL JTO Cache ESP Hub 1.1v",
+    LoadingTitle = "Let's Larp",
+    LoadingSubtitle = "Just This Once...",
     ConfigurationSaving = {Enabled = false},
     Discord = {Enabled = false},
     KeySystem = false
 }) 
 
-local MainTab = Window:CreateTab("Main ESP", 4483362458)
-local FilterTab = Window:CreateTab("Filters", 4483362458) 
+local MainTab = Window:CreateTab("Main ESP", 79963251474338)
+local FilterTab = Window:CreateTab("Filters", 79963251474338) 
 
 MainTab:CreateToggle({
     Name = "Enable ESP",
