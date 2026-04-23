@@ -14,7 +14,8 @@ local rarityFilters = {
     Rare = true,
     Epic = true,
     Legendary = true,
-    Undefined = true
+    Undefined = true,
+    Ultimate = true
 } 
 
 local function getRarity(color3)
@@ -32,6 +33,8 @@ local function getRarity(color3)
         return "Epic", "Epic", color3
     elseif r == 255 and g == 255 and b == 100 then
         return "Legendary", "Legendary", color3
+    elseif r == 255 and g == 100 and b == 100 then
+        return "Ultimate", "Ultimate", color3
     else
         return string.format("Undefined (%d, %d, %d)", r, g, b), "Undefined", color3
     end
@@ -160,7 +163,7 @@ MainTab:CreateToggle({
     end,
 }) 
 
-local categories = {"Common", "Uncommon", "Rare", "Epic", "Legendary", "Undefined"} 
+local categories = {"Common", "Uncommon", "Rare", "Epic", "Legendary", "Ultimate", "Undefined"} 
 
 for _, category in ipairs(categories) do
     FilterTab:CreateToggle({
