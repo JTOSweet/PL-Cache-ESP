@@ -40,11 +40,12 @@ end
 local function addESP(instance)
     if not (instance:IsA("BasePart")) then return end
     
+    --silly thing to skip mag attach balls
+    if instance.Name == "BALL" then return end
+
     local isCache = instance.Name:lower():find("cache") or (instance:IsA("Part") and instance.Shape == Enum.PartType.Ball)
-    if not isCache or activeESPs[instance] then return end 
-
-    local rarityName, rarityCategory, rarityColor = getRarity(instance.Color) 
-
+    if not isCache or activeESPs[instance] then return end
+    
     local billboard = Instance.new("BillboardGui")
     billboard.Name = "CacheESP_" .. instance.Name
     billboard.Adornee = instance
@@ -52,7 +53,7 @@ local function addESP(instance)
     billboard.StudsOffset = Vector3.new(0, 2, 0)
     billboard.AlwaysOnTop = true
     billboard.MaxDistance = math.huge
-    billboard.Enabled = rarityFilters[rarityCategory] 
+    billboard.Enabled = true -- Initially true, filter handles visibility in loop
 
     local textLabel = Instance.new("TextLabel")
     textLabel.Parent = billboard
@@ -60,10 +61,10 @@ local function addESP(instance)
     textLabel.BackgroundTransparency = 1
     textLabel.TextSize = 14
     textLabel.Font = Enum.Font.GothamBold
-    textLabel.TextColor3 = rarityColor
+    textLabel.TextColor3 = Color3.new(1, 1, 1)
     textLabel.TextStrokeTransparency = 0 
     textLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
-    textLabel.Text = rarityName .. "\n[ Calculating ]" 
+    textLabel.Text = "[ Loading... ]" 
 
     local success = pcall(function()
         billboard.Parent = CoreGui
@@ -74,9 +75,8 @@ local function addESP(instance)
 
     activeESPs[instance] = {
         billboard = billboard, 
-        textLabel = textLabel, 
-        rarityName = rarityName,
-        rarityCategory = rarityCategory
+        textLabel = textLabel,
+        lastColor = nil -- Used to check if we need to update rarity
     }
 end 
 
@@ -100,14 +100,8 @@ local Window = Rayfield:CreateWindow({
     Name = "Parkour Legacy Cache ESP Hub",
     LoadingTitle = "Loading...",
     LoadingSubtitle = "Cache ESP",
-    ConfigurationSaving = {
-        Enabled = false,
-        FolderName = "ESP_Configs",
-        FileName = "CacheESP"
-    },
-    Discord = {
-        Enabled = false
-    },
+    ConfigurationSaving = {Enabled = false},
+    Discord = {Enabled = false},
     KeySystem = false
 }) 
 
@@ -135,10 +129,20 @@ MainTab:CreateToggle({
                 if not root then return end 
 
                 for cache, espData in pairs(activeESPs) do
-                    if cache and cache.Parent then  
+                    if cache and cache.Parent then
+                        local rName, rCat, rCol = getRarity(cache.Color)
+                        
+                        if espData.lastColor ~= cache.Color then
+                            espData.textLabel.TextColor3 = rCol
+                            espData.billboard.Enabled = rarityFilters[rCat]
+                            espData.lastColor = cache.Color
+                            espData.currentRarityName = rName
+                            espData.currentCategory = rCat
+                        end
+
                         if espData.billboard.Enabled then
                             local distance = math.floor((root.Position - cache.Position).Magnitude)
-                            espData.textLabel.Text = string.format("%s\n[ %d studs ]", espData.rarityName, distance)
+                            espData.textLabel.Text = string.format("%s\n[ %d studs ]", espData.currentRarityName, distance)
                         end
                     else
                         removeESP(cache)
@@ -146,29 +150,15 @@ MainTab:CreateToggle({
                 end
             end)
 
-            Rayfield:Notify({
-                Title = "ESP Enabled",
-                Content = "Scanning Workspace for items",
-                Duration = 2.5,
-                Image = 4483362458
-            })
+            Rayfield:Notify({Title = "ESP Enabled", Content = "Getting Caches", Duration = 2})
         else
             if connections.added then connections.added:Disconnect() end
             if connections.removed then connections.removed:Disconnect() end
             if connections.updater then connections.updater:Disconnect() end
             clearAllESP() 
-
-            Rayfield:Notify({
-                Title = "ESP Disabled",
-                Content = "All visuals cleared",
-                Duration = 2.5,
-                Image = 4483362458
-            })
         end
     end,
 }) 
-
-MainTab:CreateDivider() 
 
 local categories = {"Common", "Uncommon", "Rare", "Epic", "Legendary", "Undefined"} 
 
@@ -179,11 +169,6 @@ for _, category in ipairs(categories) do
         Flag = category .. "FilterToggle",
         Callback = function(state)
             rarityFilters[category] = state
-            for _, espData in pairs(activeESPs) do
-                if espData.rarityCategory == category then
-                    espData.billboard.Enabled = state
-                end
-            end
         end,
     })
 end 
