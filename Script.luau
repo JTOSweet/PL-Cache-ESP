@@ -18,6 +18,16 @@ local rarityFilters = {
     Ultimate = true
 } 
 
+local notificationFilters = {
+    Common = false,
+    Uncommon = false,
+    Rare = false,
+    Epic = false,
+    Legendary = false,
+    Undefined = false,
+    Ultimate = false
+}
+
 local function getRarity(color3)
     local r = math.round(color3.R * 255)
     local g = math.round(color3.G * 255)
@@ -42,8 +52,6 @@ end
 
 local function addESP(instance)
     if not (instance:IsA("BasePart")) then return end
-    
-    --silly thing to skip mag attach balls
     if instance.Name == "BALL" then return end
 
     local isCache = instance.Name:lower():find("cache") or (instance:IsA("Part") and instance.Shape == Enum.PartType.Ball)
@@ -79,7 +87,8 @@ local function addESP(instance)
     activeESPs[instance] = {
         billboard = billboard, 
         textLabel = textLabel,
-        lastColor = nil
+        lastColor = nil,
+        notified = false
     }
 end 
 
@@ -110,6 +119,7 @@ local Window = Rayfield:CreateWindow({
 
 local MainTab = Window:CreateTab("Main ESP", 79963251474338)
 local FilterTab = Window:CreateTab("Filters", 79963251474338) 
+local NotifTab = Window:CreateTab("Notifications", 79963251474338)
 
 MainTab:CreateToggle({
     Name = "Enable ESP",
@@ -137,10 +147,22 @@ MainTab:CreateToggle({
                         
                         if espData.lastColor ~= cache.Color then
                             espData.textLabel.TextColor3 = rCol
-                            espData.billboard.Enabled = rarityFilters[rCat]
                             espData.lastColor = cache.Color
                             espData.currentRarityName = rName
                             espData.currentCategory = rCat
+                        end
+
+                        espData.billboard.Enabled = rarityFilters[espData.currentCategory]
+
+                        if not espData.notified and espData.currentCategory then
+                            espData.notified = true
+                            if notificationFilters[espData.currentCategory] then
+                                Rayfield:Notify({
+                                    Title = "Cache Spawned",
+                                    Content = "A " .. espData.currentRarityName .. " cache has appeared!",
+                                    Duration = 4
+                                })
+                            end
                         end
 
                         if espData.billboard.Enabled then
@@ -172,6 +194,15 @@ for _, category in ipairs(categories) do
         Flag = category .. "FilterToggle",
         Callback = function(state)
             rarityFilters[category] = state
+        end,
+    })
+    
+    NotifTab:CreateToggle({
+        Name = "Notify " .. category,
+        CurrentValue = false,
+        Flag = category .. "NotifToggle",
+        Callback = function(state)
+            notificationFilters[category] = state
         end,
     })
 end 
